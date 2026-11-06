@@ -1,0 +1,10 @@
+fastapi
+uvicorn
+pydantic
+sqlalchemy
+pymysql
+mysql-connector-python
+torch
+easyocr
+pillow
+python-multipart
