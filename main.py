@@ -1,3 +1,8 @@
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+
 import mysql.connector
 import torch
 import torch.nn as nn
@@ -11,7 +16,6 @@ from typing import Optional
 from datetime import date, timedelta
 
 import shutil
-import os
 from fastapi import UploadFile, File, HTTPException
 import easyocr
 
@@ -37,7 +41,15 @@ app.add_middleware(
 # ==========================================
 # 2. KONFIGURASI DATABASE PORTFOLIO (MySQL Port 3308)
 # ==========================================
-SQLALCHEMY_DATABASE_URL = "mysql+pymysql://root:@localhost:3308/zaini_portfolio"
+DB_HOST = os.getenv("DB_HOST")
+DB_PORT = os.getenv("DB_PORT", "3306")
+DB_USER = os.getenv("DB_USER")
+DB_PASSWORD = os.getenv("DB_PASSWORD")
+DB_NAME = os.getenv("DB_NAME")
+
+SQLALCHEMY_DATABASE_URL = (
+    f"mysql+pymysql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
+)
 
 engine = create_engine(SQLALCHEMY_DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
@@ -62,12 +74,14 @@ def get_db():
 # ==========================================
 def get_ai_wms_db():
     return mysql.connector.connect(
-        host="127.0.0.1",
-        port=3308,
-        user="root",
-        password="",
-        database="zaini_ai_wms"
+        host=os.getenv("DB_HOST"),
+        port=int(os.getenv("DB_PORT", "3306")),
+        user=os.getenv("DB_USER"),
+        password=os.getenv("DB_PASSWORD"),
+        database=os.getenv("DB_NAME")
     )
+print("DB_HOST =", os.getenv("DB_HOST"))
+print("DB_NAME =", os.getenv("DB_NAME"))
 
 
 # ==========================================
@@ -353,13 +367,15 @@ def predict_demand_tensor(warehouse_id: int, sku_id: int):
 # 6. ENDPOINT MODUL SCAN OCR
 # ==========================================
 # Inisialisasi reader EasyOCR (mendukung bahasa Inggris & Indonesia)
-reader = easyocr.Reader(['en', 'id'])
+
 
 UPLOAD_DIR = "uploads"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 @app.post("/api/v1/ai-wms/ocr-scan")
 async def scan_ocr_image(file: UploadFile = File(...)):
+
+    reader = easyocr.Reader(['en', 'id'])
     try:
         file_path = os.path.join(UPLOAD_DIR, file.filename)
         with open(file_path, "wb") as buffer:

@@ -21,7 +21,7 @@ def get_db_connection():
         port=3308,
         user="root",
         password="",
-        database="zaini_ai_wms"
+        database="zaini_portfolio"
     )
 
 # Pydantic Model untuk Request Body LLM / Generative Assistant
